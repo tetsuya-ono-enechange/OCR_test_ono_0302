@@ -1,167 +1,136 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>検針票OCR・カメラ読み取りデモ</title>
+    <title>APP_V3</title>
     <style>
-        :root { --main-blue: #1a73e8; --error-red: #d93025; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        :root { --c1: #1a73e8; --c2: #d93025; }
+        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { font-size: 1.2rem; margin-top: 0; color: var(--main-blue); border-bottom: 2px solid #eef2f7; padding-bottom: 10px; }
-        
-        /* カメラボタンのスタイル */
-        .camera-btn-wrapper { text-align: center; margin: 20px 0; }
-        #imageInput { display: none; }
-        .custom-file-upload {
-            background-color: var(--main-blue); color: white; padding: 15px 30px;
+        h2 { font-size: 1rem; margin-top: 0; color: var(--c1); border-bottom: 2px solid #eef2f7; padding-bottom: 10px; }
+        .btn-box { text-align: center; margin: 20px 0; }
+        #f1 { display: none; }
+        .btn-ui {
+            background-color: var(--c1); color: white; padding: 15px 30px;
             border-radius: 50px; cursor: pointer; display: inline-block; font-weight: bold;
             box-shadow: 0 4px 6px rgba(0,0,0,0.2); transition: 0.2s;
         }
-        .custom-file-upload:active { transform: scale(0.95); }
-
-        /* 入力フォームのスタイル */
-        .form-group { margin-top: 20px; }
-        label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; color: #555; }
-        .result-input {
+        .btn-ui:active { transform: scale(0.95); }
+        .form-box { margin-top: 20px; }
+        .input-ui {
             width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd;
-            border-radius: 8px; box-sizing: border-box; transition: 0.3s;
+            border-radius: 8px; box-sizing: border-box;
         }
-        .result-input.success { border-color: #28a745; background-color: #f8fff9; }
-
-        /* ステータス表示 */
-        #loading { display: none; text-align: center; font-weight: bold; color: var(--main-blue); margin: 10px 0; }
-        .error { color: var(--error-red); background: #fce8e6; padding: 10px; border-radius: 8px; font-size: 0.85rem; display: none; margin-top: 10px; }
-        
-        #preview { width: 100%; border-radius: 8px; margin-top: 15px; display: none; border: 1px solid #ddd; }
-        pre { background: #333; color: #0f0; padding: 10px; border-radius: 8px; font-size: 0.75rem; overflow-x: auto; max-height: 150px; }
+        .input-ui.ok { border-color: #28a745; background-color: #f8fff9; }
+        #ld { display: none; text-align: center; font-weight: bold; color: var(--c1); margin: 10px 0; }
+        .err { color: var(--c2); background: #fce8e6; padding: 10px; border-radius: 8px; font-size: 0.85rem; display: none; margin-top: 10px; }
+        #pv { width: 100%; border-radius: 8px; margin-top: 15px; display: none; border: 1px solid #ddd; }
+        pre { background: #333; color: #0f0; padding: 10px; border-radius: 8px; font-size: 0.75rem; overflow-x: auto; max-height: 100px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h2>検針票を読み取る</h2>
-        <p style="font-size: 0.85rem; color: #666;">ボタンを押して、カメラで検針票を撮影または画像を選択してください。</p>
-        
-        <div class="camera-btn-wrapper">
-            <label for="imageInput" class="custom-file-upload">
-                📷 撮影・画像を選択
-            </label>
-            <input type="file" id="imageInput" accept="image/*" capture="environment">
+        <h2>SCANNER</h2>
+        <div class="btn-box">
+            <label for="f1" class="btn-ui"> 📷 RUN </label>
+            <input type="file" id="f1" accept="image/*" capture="environment">
         </div>
-
-        <div id="loading">⏳ AIが解析中...</div>
-        <div id="errorArea" class="error"></div>
-        <img id="preview" alt="プレビュー">
+        <div id="ld">...RUNNING...</div>
+        <div id="msg" class="err"></div>
+        <img id="pv">
     </div>
 
     <div class="card">
-        <h2>解析結果</h2>
-        <div class="form-group">
-            <label>供給地点特定番号 (22桁)</label>
-            <input type="text" id="locNumber" class="result-input" placeholder="ここに22桁の番号が入ります">
+        <h2>RESULT</h2>
+        <div class="form-box">
+            <input type="text" id="d1" class="input-ui" placeholder="...">
         </div>
     </div>
 
-    <div class="card" style="background: #eef2f7;">
-        <h2 style="color: #666; font-size: 0.9rem;">全テキスト抽出結果</h2>
-        <pre id="rawText">読み取ったテキストがここに表示されます</pre>
+    <div class="card" style="background: #eef2f7; opacity: 0.6;">
+        <pre id="raw">-</pre>
     </div>
 </div>
 
 <script>
-    // 【重要】APIキーは適切に管理してください
-    const API_KEY = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
+    const _K = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
 
-    const imageInput = document.getElementById('imageInput');
-    const loading = document.getElementById('loading');
-    const errorArea = document.getElementById('errorArea');
-    const locNumber = document.getElementById('locNumber');
-    const rawText = document.getElementById('rawText');
-    const preview = document.getElementById('preview');
+    const f1 = document.getElementById('f1');
+    const ld = document.getElementById('ld');
+    const msg = document.getElementById('msg');
+    const d1 = document.getElementById('d1');
+    const raw = document.getElementById('raw');
+    const pv = document.getElementById('pv');
 
-    imageInput.addEventListener('change', async (e) => {
+    f1.addEventListener('change', async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // UIリセット
-        errorArea.style.display = 'none';
-        loading.style.display = 'block';
-        locNumber.classList.remove('success');
-        locNumber.value = "";
-        rawText.innerText = "画像を処理中...";
+        msg.style.display = 'none';
+        ld.style.display = 'block';
+        d1.classList.remove('ok');
+        d1.value = "";
+        raw.innerText = "PROCCESSING...";
 
-        // プレビュー表示
         const reader = new FileReader();
         reader.onload = (f) => {
-            preview.src = f.target.result;
-            preview.style.display = 'block';
+            pv.src = f.target.result;
+            pv.style.display = 'block';
         };
         reader.readAsDataURL(file);
 
         try {
-            const base64Image = await toBase64(file);
-            
-            const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${API_KEY}`, {
+            const b64 = await toB64(file);
+            const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_K}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     requests: [{
-                        image: { content: base64Image.split(',')[1] },
+                        image: { content: b64.split(',')[1] },
                         features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
                     }]
                 })
             });
 
-            const data = await response.json();
+            const data = await res.json();
+            if (data.error) throw new Error("ERR_API");
 
-            if (data.error) {
-                throw new Error(`Google APIエラー: ${data.error.message}`);
-            }
+            const rs = data.responses[0];
+            if (rs && rs.fullTextAnnotation) {
+                const tx = rs.fullTextAnnotation.text;
+                raw.innerText = tx;
+                const cl = tx.replace(/[\s\n-]/g, '');
+                const m = cl.match(/\d{22}/);
 
-            const result = data.responses[0];
-
-            if (result && result.fullTextAnnotation) {
-                const text = result.fullTextAnnotation.text;
-                rawText.innerText = text;
-
-                // 22桁の数字を抽出（改行・空白・ハイフンを除去して検索）
-                const cleanText = text.replace(/[\s\n-]/g, '');
-                // 連続する22桁の数字を探す
-                const match = cleanText.match(/\d{22}/);
-
-                if (match) {
-                    locNumber.value = match[0];
-                    locNumber.classList.add('success');
+                if (m) {
+                    d1.value = m[0];
+                    d1.classList.add('ok');
                 } else {
-                    errorArea.innerText = "22桁の番号が見つかりませんでした。明るい場所で、番号が水平になるよう撮り直してください。";
-                    errorArea.style.display = 'block';
+                    throw new Error("ERR_NOT_FOUND");
                 }
             } else {
-                throw new Error("画像から文字を読み取れませんでした。");
+                throw new Error("ERR_NULL");
             }
-
         } catch (err) {
-            errorArea.innerText = "エラー: " + err.message;
-            errorArea.style.display = 'block';
-            console.error(err);
+            msg.innerText = err.message;
+            msg.style.display = 'block';
         } finally {
-            loading.style.display = 'none';
+            ld.style.display = 'none';
         }
     });
 
-    // 画像ファイルをBase64文字列に変換する関数
-    function toBase64(file) {
+    function toB64(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = error => reject(error);
+            const r = new FileReader();
+            r.readAsDataURL(file);
+            r.onload = () => resolve(r.result);
+            r.onerror = e => reject(e);
         });
     }
 </script>
-
 </body>
 </html>
