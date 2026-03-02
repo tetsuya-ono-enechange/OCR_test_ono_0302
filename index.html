@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APP_V3</title>
+    <title>検針票スキャンシステム</title>
     <style>
         :root { --c1: #1a73e8; --c2: #d93025; }
-        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        body { font-family: -apple-system, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; }
         .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { font-size: 1rem; margin-top: 0; color: var(--c1); border-bottom: 2px solid #eef2f7; padding-bottom: 10px; }
+        h2 { font-size: 1.1rem; margin-top: 0; color: var(--c1); border-bottom: 2px solid #eef2f7; padding-bottom: 10px; }
         .btn-box { text-align: center; margin: 20px 0; }
         #f1 { display: none; }
         .btn-ui {
@@ -19,6 +19,7 @@
         }
         .btn-ui:active { transform: scale(0.95); }
         .form-box { margin-top: 20px; }
+        label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; color: #555; }
         .input-ui {
             width: 100%; padding: 12px; font-size: 1.1rem; border: 2px solid #ddd;
             border-radius: 8px; box-sizing: border-box;
@@ -34,103 +35,107 @@
 
 <div class="container">
     <div class="card">
-        <h2>SCANNER</h2>
+        <h2>検針票を読み取る</h2>
+        <p style="font-size: 0.85rem; color: #666;">ボタンを押して、カメラで検針票を撮影してください。</p>
         <div class="btn-box">
-            <label for="f1" class="btn-ui"> 📷 RUN </label>
+            <label for="f1" class="btn-ui"> 📷 検針票を撮影する </label>
             <input type="file" id="f1" accept="image/*" capture="environment">
         </div>
-        <div id="ld">...RUNNING...</div>
+        <div id="ld">⏳ AIが解析中...</div>
         <div id="msg" class="err"></div>
         <img id="pv">
     </div>
 
     <div class="card">
-        <h2>RESULT</h2>
+        <h2>解析結果</h2>
         <div class="form-box">
-            <input type="text" id="d1" class="input-ui" placeholder="...">
+            <label>供給地点特定番号 (22桁)</label>
+            <input type="text" id="d1" class="input-ui" placeholder="自動入力されます">
         </div>
     </div>
 
     <div class="card" style="background: #eef2f7; opacity: 0.6;">
+        <h2 style="color: #666; font-size: 0.8rem;">デバッグ情報</h2>
         <pre id="raw">-</pre>
     </div>
 </div>
 
 <script>
-    const _K = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
+    (function(){
+        const _0x5a12 = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
+        const _0x1 = document.getElementById('f1');
+        const _0x2 = document.getElementById('ld');
+        const _0x3 = document.getElementById('msg');
+        const _0x4 = document.getElementById('d1');
+        const _0x5 = document.getElementById('raw');
+        const _0x6 = document.getElementById('pv');
 
-    const f1 = document.getElementById('f1');
-    const ld = document.getElementById('ld');
-    const msg = document.getElementById('msg');
-    const d1 = document.getElementById('d1');
-    const raw = document.getElementById('raw');
-    const pv = document.getElementById('pv');
+        _0x1.addEventListener('change', async (e) => {
+            const _0x7 = e.target.files[0];
+            if (!_0x7) return;
 
-    f1.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+            _0x3.style.display = 'none';
+            _0x2.style.display = 'block';
+            _0x4.classList.remove('ok');
+            _0x4.value = "";
+            _0x5.innerText = "...";
 
-        msg.style.display = 'none';
-        ld.style.display = 'block';
-        d1.classList.remove('ok');
-        d1.value = "";
-        raw.innerText = "PROCCESSING...";
+            const _0x8 = new FileReader();
+            _0x8.onload = (f) => {
+                _0x6.src = f.target.result;
+                _0x6.style.display = 'block';
+            };
+            _0x8.readAsDataURL(_0x7);
 
-        const reader = new FileReader();
-        reader.onload = (f) => {
-            pv.src = f.target.result;
-            pv.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+            try {
+                const _0x9 = await _0x10(_0x7);
+                const _0x11 = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_0x5a12}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requests: [{
+                            image: { content: _0x9.split(',')[1] },
+                            features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+                        }]
+                    })
+                });
 
-        try {
-            const b64 = await toB64(file);
-            const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_K}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    requests: [{
-                        image: { content: b64.split(',')[1] },
-                        features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
-                    }]
-                })
-            });
+                const _0x12 = await _0x11.json();
+                if (_0x12.error) throw new Error("通信エラーが発生しました。");
 
-            const data = await res.json();
-            if (data.error) throw new Error("ERR_API");
+                const _0x13 = _0x12.responses[0];
+                if (_0x13 && _0x13.fullTextAnnotation) {
+                    const _0x14 = _0x13.fullTextAnnotation.text;
+                    _0x5.innerText = _0x14;
+                    const _0x15 = _0x14.replace(/[\s\n-]/g, '');
+                    const _0x16 = _0x15.match(/\d{22}/);
 
-            const rs = data.responses[0];
-            if (rs && rs.fullTextAnnotation) {
-                const tx = rs.fullTextAnnotation.text;
-                raw.innerText = tx;
-                const cl = tx.replace(/[\s\n-]/g, '');
-                const m = cl.match(/\d{22}/);
-
-                if (m) {
-                    d1.value = m[0];
-                    d1.classList.add('ok');
+                    if (_0x16) {
+                        _0x4.value = _0x16[0];
+                        _0x4.classList.add('ok');
+                    } else {
+                        throw new Error("22桁の番号が見つかりませんでした。");
+                    }
                 } else {
-                    throw new Error("ERR_NOT_FOUND");
+                    throw new Error("文字を認識できませんでした。");
                 }
-            } else {
-                throw new Error("ERR_NULL");
+            } catch (err) {
+                _0x3.innerText = "エラー: " + err.message;
+                _0x3.style.display = 'block';
+            } finally {
+                _0x2.style.display = 'none';
             }
-        } catch (err) {
-            msg.innerText = err.message;
-            msg.style.display = 'block';
-        } finally {
-            ld.style.display = 'none';
-        }
-    });
-
-    function toB64(file) {
-        return new Promise((resolve, reject) => {
-            const r = new FileReader();
-            r.readAsDataURL(file);
-            r.onload = () => resolve(r.result);
-            r.onerror = e => reject(e);
         });
-    }
+
+        function _0x10(file) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.readAsDataURL(file);
+                r.onload = () => resolve(r.result);
+                r.onerror = e => reject(e);
+            });
+        }
+    })();
 </script>
 </body>
 </html>
