@@ -35,13 +35,15 @@
 
 <div class="container">
     <div class="card">
-        <h2>検針票を読み取る</h2>
-        <p style="font-size: 0.85rem; color: #666;">ボタンを押して、カメラで検針票を撮影してください。</p>
+        <h2>検針票の読み取り</h2>
+        <p style="font-size: 0.85rem; color: #666;">
+            検針票を**撮影**するか、保存された**画像を選択**してください。
+        </p>
         <div class="btn-box">
-            <label for="f1" class="btn-ui"> 📷 検針票を撮影する </label>
+            <label for="f1" class="btn-ui"> 📷 撮影・画像を選択 </label>
             <input type="file" id="f1" accept="image/*" capture="environment">
         </div>
-        <div id="ld">⏳ AIが解析中...</div>
+        <div id="ld">⏳ 解析中...</div>
         <div id="msg" class="err"></div>
         <img id="pv">
     </div>
@@ -55,84 +57,85 @@
     </div>
 
     <div class="card" style="background: #eef2f7; opacity: 0.6;">
-        <h2 style="color: #666; font-size: 0.8rem;">デバッグ情報</h2>
+        <h2 style="color: #666; font-size: 0.8rem;">システムログ</h2>
         <pre id="raw">-</pre>
     </div>
 </div>
 
 <script>
+    /* ソースコードの意図を隠すための構成を維持 */
     (function(){
-        const _0x5a12 = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
-        const _0x1 = document.getElementById('f1');
-        const _0x2 = document.getElementById('ld');
-        const _0x3 = document.getElementById('msg');
-        const _0x4 = document.getElementById('d1');
-        const _0x5 = document.getElementById('raw');
-        const _0x6 = document.getElementById('pv');
+        const _0x_k = 'AIzaSyAAtc3_OIUQOCFbLaW6KoOhH0CUhfqMxVw';
+        const _v1 = document.getElementById('f1');
+        const _v2 = document.getElementById('ld');
+        const _v3 = document.getElementById('msg');
+        const _v4 = document.getElementById('d1');
+        const _v5 = document.getElementById('raw');
+        const _v6 = document.getElementById('pv');
 
-        _0x1.addEventListener('change', async (e) => {
-            const _0x7 = e.target.files[0];
-            if (!_0x7) return;
+        _v1.addEventListener('change', async (e) => {
+            const _file = e.target.files[0];
+            if (!_file) return;
 
-            _0x3.style.display = 'none';
-            _0x2.style.display = 'block';
-            _0x4.classList.remove('ok');
-            _0x4.value = "";
-            _0x5.innerText = "...";
+            _v3.style.display = 'none';
+            _v2.style.display = 'block';
+            _v4.classList.remove('ok');
+            _v4.value = "";
+            _v5.innerText = "...";
 
-            const _0x8 = new FileReader();
-            _0x8.onload = (f) => {
-                _0x6.src = f.target.result;
-                _0x6.style.display = 'block';
+            const _rd = new FileReader();
+            _rd.onload = (f) => {
+                _v6.src = f.target.result;
+                _v6.style.display = 'block';
             };
-            _0x8.readAsDataURL(_0x7);
+            _rd.readAsDataURL(_file);
 
             try {
-                const _0x9 = await _0x10(_0x7);
-                const _0x11 = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_0x5a12}`, {
+                const _b6 = await _f_b6(_file);
+                const _res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_0x_k}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         requests: [{
-                            image: { content: _0x9.split(',')[1] },
+                            image: { content: _b6.split(',')[1] },
                             features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
                         }]
                     })
                 });
 
-                const _0x12 = await _0x11.json();
-                if (_0x12.error) throw new Error("通信エラーが発生しました。");
+                const _data = await _res.json();
+                if (_data.error) throw new Error("API通信エラー");
 
-                const _0x13 = _0x12.responses[0];
-                if (_0x13 && _0x13.fullTextAnnotation) {
-                    const _0x14 = _0x13.fullTextAnnotation.text;
-                    _0x5.innerText = _0x14;
-                    const _0x15 = _0x14.replace(/[\s\n-]/g, '');
-                    const _0x16 = _0x15.match(/\d{22}/);
+                const _rs = _data.responses[0];
+                if (_rs && _rs.fullTextAnnotation) {
+                    const _tx = _rs.fullTextAnnotation.text;
+                    _v5.innerText = _tx;
+                    const _cl = _tx.replace(/[\s\n-]/g, '');
+                    const _m = _cl.match(/\d{22}/);
 
-                    if (_0x16) {
-                        _0x4.value = _0x16[0];
-                        _0x4.classList.add('ok');
+                    if (_m) {
+                        _v4.value = _m[0];
+                        _v4.classList.add('ok');
                     } else {
-                        throw new Error("22桁の番号が見つかりませんでした。");
+                        throw new Error("22桁の番号が見つかりません。");
                     }
                 } else {
-                    throw new Error("文字を認識できませんでした。");
+                    throw new Error("文字認識に失敗しました。");
                 }
             } catch (err) {
-                _0x3.innerText = "エラー: " + err.message;
-                _0x3.style.display = 'block';
+                _v3.innerText = "通知: " + err.message;
+                _v3.style.display = 'block';
             } finally {
-                _0x2.style.display = 'none';
+                _v2.style.display = 'none';
             }
         });
 
-        function _0x10(file) {
-            return new Promise((resolve, reject) => {
-                const r = new FileReader();
-                r.readAsDataURL(file);
-                r.onload = () => resolve(r.result);
-                r.onerror = e => reject(e);
+        function _f_b6(f) {
+            return new Promise((r, j) => {
+                const a = new FileReader();
+                a.readAsDataURL(f);
+                a.onload = () => r(a.result);
+                a.onerror = e => j(e);
             });
         }
     })();
